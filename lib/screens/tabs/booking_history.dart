@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:services_worker/constants.dart';
-import 'package:services_worker/widgets/tabs/upcoming_tab.dart';
 
-import '../../widgets/tabs/completed_tab.dart';
+import '../../constants.dart';
+import '../../models/booking_model.dart';
+import '../../services/booking_service.dart';
+
 import '../../widgets/sw_text.dart';
+import '../../widgets/tabs/completed_tab.dart';
+import '../../widgets/tabs/upcoming_tab.dart';
 
-class BookingHistoryScreen extends StatelessWidget {
-  static const routeName = "/booking-history";
+class BookingHistoryScreen extends StatefulWidget {
+  static const routeName = "/bookingHistory";
   const BookingHistoryScreen({Key? key}) : super(key: key);
+
+  @override
+  State<BookingHistoryScreen> createState() => _BookingHistoryScreenState();
+}
+
+class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
+  List<Booking>? allBooking;
+  @override
+  void initState() {
+    init();
+    super.initState();
+  }
+
+  init() async {
+    allBooking = await BookingService().fetchAllWorkerBookings();
+    setState(() {});
+  }
+
+  changeBooking() {
+    allBooking = null;
+    setState(() {});
+    init();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,50 +41,60 @@ class BookingHistoryScreen extends StatelessWidget {
         length: 2,
         child: Scaffold(
             body: Padding(
-          padding: const EdgeInsets.only(top: 56, left: 16, right: 16),
+          padding: const EdgeInsets.only(top: 48, left: 12, right: 12),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 24,
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  SwText(
-                    "Booking History",
-                    size: 20,
-                  )
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: SizedBox(
-                  height: 50,
-                  child: TabBar(
-                    labelColor: primaryColor,
-                    tabs: [
-                      Tab(
-                        text: "Upcoming",
+              Padding(
+                  padding: EdgeInsets.only(left: 8, top: 10, bottom: 10),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 24,
+                        ),
                       ),
-                      Tab(
-                        text: "Completed",
-                      ),
+                      SizedBox(width: 16),
+                      SwText(
+                        "Booking History",
+                        size: 20,
+                      )
                     ],
-                  ),
-                ),
-              ),
-              const Expanded(
-                child: TabBarView(
-                  children: [
-                    UpcomingBookingTab(),
-                    CompletedBookingTab(),
+                  )),
+              const SizedBox(
+                height: 50,
+                child: TabBar(
+                  labelColor: primaryColor,
+                  tabs: [
+                    Tab(
+                      text: "Upcoming",
+                    ),
+                    Tab(
+                      text: "Completed",
+                    ),
                   ],
                 ),
               ),
+
+              // create widgets for each tab bar here
+              allBooking == null
+                  ? SizedBox()
+                  : Expanded(
+                      child: TabBarView(
+                        children: [
+                          // first tab bar view widget
+                          UpcomingBookingTab(
+                            bookingList: allBooking ?? [],
+                            func: changeBooking,
+                          ),
+
+                          // second tab bar viiew widget
+                          CompletedBookingTab(bookingList: allBooking ?? [])
+                        ],
+                      ),
+                    ),
             ],
           ),
         )));

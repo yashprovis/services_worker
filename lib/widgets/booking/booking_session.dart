@@ -5,10 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:services_worker/providers/booking_provider.dart';
 import 'package:services_worker/widgets/sw_text.dart';
 import '../../constants.dart';
+import '../../helpers/methods.dart';
+import '../../models/booking_model.dart';
+import '../../providers/worker_provider.dart';
+import '../../services/booking_service.dart';
 import '../../widgets/sw_button.dart';
 
 class BookingSession extends StatefulWidget {
-  const BookingSession({Key? key}) : super(key: key);
+  final Booking? booking;
+  const BookingSession({Key? key, required this.booking}) : super(key: key);
 
   @override
   State<BookingSession> createState() => _BookingSessionState();
@@ -20,6 +25,7 @@ class _BookingSessionState extends State<BookingSession> {
   @override
   Widget build(BuildContext context) {
     BookingProvider bookingProvider = Provider.of<BookingProvider>(context);
+    WorkerProvider workerProvider = Provider.of<WorkerProvider>(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       child: Column(
@@ -36,38 +42,38 @@ class _BookingSessionState extends State<BookingSession> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SwText("Booking No: SW000${0 + 1}",
-                          size: 14, color: primaryColor),
+                      SwText("Id: ${widget.booking!.id}",
+                          size: 16, color: primaryColor),
                       Row(
                         children: [
                           GestureDetector(
                               // onTap: () => downloadPdf(),
                               child:
                                   const Icon(Icons.timer_outlined, size: 22)),
-                          const SizedBox(width: 6),
-                          const Text(
-                              //   onTap: () => sharePdf(),
-                              "1.5 hrs"),
+                          const SizedBox(width: 4),
+                          Text(
+                              "${durationToString(widget.booking!.bookingDuration)} Hr."),
                         ],
                       ),
                     ],
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     child: SwText(
-                        "Date: ${DateFormat("MMM dd,yy hh:mm a").format(DateTime.now().add(const Duration(minutes: (0 + 1) * 2000)))}",
-                        size: 12,
+                        "Date: ${DateFormat("MMM dd,yy hh:mm a").format(widget.booking!.bookingDate)}",
+                        size: 14,
                         color: Colors.grey),
                   ),
-                  const SwText("Customer: Ravi Provis", size: 14),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: SwText("Amount: ₹4,000.00", size: 14),
+                  SwText("Customer: ${widget.booking!.customerName}", size: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: SwText("Amount: ₹${widget.booking!.bookingTotal}",
+                        size: 14),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 2, bottom: 2),
+                    padding: const EdgeInsets.only(top: 2, bottom: 8),
                     child: SwText(
-                        "Address: 503, Signature Tower, Tonk Phatak, Jaipur - 302006",
+                        "Address: ${widget.booking!.address.toString()}",
                         size: 12,
                         color: Colors.grey[600]),
                   ),
@@ -131,8 +137,31 @@ class _BookingSessionState extends State<BookingSession> {
             ),
           ),
           SwButton(
-              text: "Request ₹${100 * totalHours + (totalMinutes * 100 / 60)}",
-              func: () {},
+              text:
+                  "Request ₹${workerProvider.getWorker.hourlyRate * totalHours + (workerProvider.getWorker.hourlyRate * totalMinutes / 60)}",
+              func: () async {
+                if (workerProvider.getWorker.hourlyRate * totalHours +
+                        (workerProvider.getWorker.hourlyRate *
+                            totalMinutes /
+                            60) !=
+                    0) {
+                  var bookingData = await BookingService().updateBooking(
+                      widget.booking!.id,
+                      "requested",
+                      widget.booking!.workerId,
+                      widget.booking!.customerId,
+                      bookingProvider.socket,
+                      (workerProvider.getWorker.hourlyRate * totalHours +
+                          workerProvider.getWorker.hourlyRate *
+                              totalMinutes ~/
+                              60),
+                      (totalHours * 60 + totalMinutes));
+                  if (bookingData != null) {
+                    bookingProvider.setBooking(bookingData);
+                    bookingProvider.paymentRequest();
+                  }
+                }
+              },
               isLoading: false)
         ],
       ),

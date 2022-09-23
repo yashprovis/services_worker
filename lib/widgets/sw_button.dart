@@ -33,9 +33,9 @@ class SwButton extends StatelessWidget {
           width: width,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: appGradient,
+            gradient: color != null ? null : appGradient,
             borderRadius: BorderRadius.circular(5),
-            //color: color ?? primaryColor,
+            color: color,
           ),
           child: isLoading
               ? const Center(

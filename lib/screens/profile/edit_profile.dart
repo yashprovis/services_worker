@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../../providers/worker_provider.dart';
 import '../../widgets/sheets/change_password.dart';
+import '../../widgets/sheets/image_picker_sheet.dart';
 import '../../widgets/sw_button.dart';
 import '../../widgets/sw_text.dart';
 import '../../widgets/sw_textfield.dart';
@@ -26,8 +29,21 @@ class _EditProfileState extends State<EditProfile> {
   FocusNode phoneNode = FocusNode();
 
   String? gender;
+
+  @override
+  void initState() {
+    WorkerProvider workerProvider =
+        Provider.of<WorkerProvider>(context, listen: false);
+    gender = workerProvider.getWorker.gender;
+    emailController.text = workerProvider.getWorker.email;
+    nameController.text = workerProvider.getWorker.name;
+    phoneController.text = workerProvider.getWorker.phone;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
+    WorkerProvider workerProvider = Provider.of<WorkerProvider>(context);
     return Scaffold(
         backgroundColor: Colors.white,
         body: Padding(
@@ -61,31 +77,33 @@ class _EditProfileState extends State<EditProfile> {
                   child: Form(
                       key: editProfileFormKey,
                       child: Column(children: [
-                        Container(
-                            height: 120,
-                            width: 120,
-                            margin: const EdgeInsets.only(bottom: 40, top: 10),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                                color: primaryLight,
-                                borderRadius: BorderRadius.circular(60),
-                                image:
-                                    // userProvider.getUser.image == "" ?
-                                    null
-                                // : DecorationImage(
-                                //     image: NetworkImage(
-                                //         userProvider.getUser.image))
-                                ),
-                            child:
-                                //userProvider.getUser.image == "" ?
-                                SwText(
-                                    "userProvider.getUser.name"
-                                        .substring(0, 2)
-                                        .toUpperCase(),
-                                    color: Colors.white,
-                                    size: 26)
-                            //  : null,
-                            ),
+                        GestureDetector(
+                            onTap: () {
+                              imagePickerSheet(context);
+                            },
+                            child: Container(
+                              height: 120,
+                              width: 120,
+                              margin:
+                                  const EdgeInsets.only(bottom: 40, top: 10),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                  color: primaryLight,
+                                  borderRadius: BorderRadius.circular(60),
+                                  image: workerProvider.getWorker.image == ""
+                                      ? null
+                                      : DecorationImage(
+                                          image: NetworkImage(
+                                              workerProvider.getWorker.image))),
+                              child: workerProvider.getWorker.image == ""
+                                  ? SwText(
+                                      workerProvider.getWorker.name
+                                          .substring(0, 2)
+                                          .toUpperCase(),
+                                      color: Colors.white,
+                                      size: 26)
+                                  : null,
+                            )),
                         SwTextField(
                           controller: nameController,
                           hintText: "Name *".toUpperCase(),
@@ -182,11 +200,12 @@ class _EditProfileState extends State<EditProfile> {
                             child: SwButton(
                                 text: "Save Changes",
                                 func: () {
-                                  // userProvider.updateUser(
-                                  //     name: nameController.text,
-                                  //     phone: phoneController.text,
-                                  //     image: "",
-                                  //     context: context);
+                                  workerProvider.updateWorker(
+                                      name: nameController.text,
+                                      phone: phoneController.text,
+                                      gender: gender,
+                                      image: null,
+                                      context: context);
                                 },
                                 isLoading: false))
                       ])))

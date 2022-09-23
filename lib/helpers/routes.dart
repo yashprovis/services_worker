@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:services_worker/models/booking_model.dart';
 import 'package:services_worker/screens/profile/edit_work.dart';
 import 'package:services_worker/screens/profile/terms_conditions.dart';
 import 'package:services_worker/screens/tabs/booking_history.dart';
@@ -7,6 +8,7 @@ import 'package:services_worker/screens/tabs/invoice_preview.dart';
 import '../screens/forgot_password.dart';
 import '../screens/login.dart';
 
+import '../screens/new_password.dart';
 import '../screens/profile/edit_profile.dart';
 import '../screens/profile/help_support.dart';
 import '../screens/register.dart';
@@ -43,13 +45,17 @@ class RouteGenerator {
         );
       case RegisterWorkScreen.routeName:
         return MaterialPageRoute(
-          builder: (context) => const RegisterWorkScreen(),
+          builder: (context) =>
+              RegisterWorkScreen(args: args as Map<String, String>),
         );
       case ForgotPasswordScreen.routeName:
         return MaterialPageRoute(
           builder: (context) => const ForgotPasswordScreen(),
         );
-
+      case NewPasswordScreen.routeName:
+        return MaterialPageRoute(
+          builder: (context) => NewPasswordScreen(email: args as String),
+        );
       case ProfileScreen.routeName:
         return MaterialPageRoute(
           builder: (context) => const ProfileScreen(),
@@ -73,7 +79,7 @@ class RouteGenerator {
         );
       case InvoicePreview.routeName:
         return MaterialPageRoute(
-          builder: (context) => InvoicePreview(link: args as String),
+          builder: (context) => InvoicePreview(args: args as Map),
         );
       // case OrderDetail.routeName:
       //   return MaterialPageRoute(

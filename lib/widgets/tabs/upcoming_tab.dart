@@ -1,28 +1,51 @@
 import 'package:flutter/material.dart';
-
 import 'package:intl/intl.dart';
 
 import '../../constants.dart';
+import '../../helpers/methods.dart';
+import '../../models/booking_model.dart';
+
+import '../dialogs/reject_booking.dart';
 import '../sw_text.dart';
 
-class UpcomingBookingTab extends StatelessWidget {
-  const UpcomingBookingTab({Key? key}) : super(key: key);
+class UpcomingBookingTab extends StatefulWidget {
+  final List<Booking> bookingList;
+  final void Function()? func;
+  const UpcomingBookingTab({Key? key, this.func, required this.bookingList})
+      : super(key: key);
+
+  @override
+  State<UpcomingBookingTab> createState() => _UpcomingBookingTabState();
+}
+
+class _UpcomingBookingTabState extends State<UpcomingBookingTab> {
+  List<Booking> upcomingBookings = [];
+
+  @override
+  void initState() {
+    upcomingBookings = widget.bookingList.where((element) {
+      return (element.bookingStatus == "created" &&
+          element.bookingDate
+                  .add(const Duration(minutes: 180))
+                  .millisecondsSinceEpoch >
+              DateTime.now().millisecondsSinceEpoch);
+    }).toList();
+    setState(() {});
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.only(top: 12, bottom: 2),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 4),
         shrinkWrap: true,
-        itemCount: 6,
+        itemCount: upcomingBookings.length,
         //  physics: ClampingScrollPhysics(),
         itemBuilder: (context, index) {
           return GestureDetector(
-            onTap: () {
-              // Navigator.of(context).pushNamed(InvoicePreview.routeName,
-              //     arguments: "SW000${index + 1}");
-            },
+            onTap: () {},
             child: Card(
               elevation: 2,
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -35,7 +58,7 @@ class UpcomingBookingTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SwText("Booking No: SW000${index + 1}",
+                        SwText("Id: ${upcomingBookings[index].id}",
                             size: 14, color: primaryColor),
                         Row(
                           children: [
@@ -43,10 +66,9 @@ class UpcomingBookingTab extends StatelessWidget {
                                 // onTap: () => downloadPdf(),
                                 child:
                                     const Icon(Icons.timer_outlined, size: 22)),
-                            const SizedBox(width: 6),
-                            const Text(
-                                //   onTap: () => sharePdf(),
-                                "1.5 hrs"),
+                            const SizedBox(width: 4),
+                            Text(
+                                "${durationToString(upcomingBookings[index].bookingDuration)} Hr."),
                           ],
                         ),
                       ],
@@ -54,19 +76,22 @@ class UpcomingBookingTab extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: SwText(
-                          "Date: ${DateFormat("MMM dd,yy hh:mm a").format(DateTime.now().add(Duration(minutes: (index + 1) * 2000)))}",
+                          "Date: ${DateFormat("MMM dd,yy hh:mm a").format(upcomingBookings[index].bookingDate)}",
                           size: 12,
                           color: Colors.grey),
                     ),
-                    const SwText("Customer: Ravi Provis", size: 14),
-                    const Padding(
+                    SwText("Customer: ${upcomingBookings[index].customerName}",
+                        size: 14),
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 4),
-                      child: SwText("Amount: ₹4,000.00", size: 14),
+                      child: SwText(
+                          "Amount: ₹${upcomingBookings[index].bookingTotal}",
+                          size: 14),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 2, bottom: 2),
                       child: SwText(
-                          "Address: 503, Signature Tower, Tonk Phatak, Jaipur - 302006",
+                          "Address: ${upcomingBookings[index].address.toString()}",
                           size: 12,
                           color: Colors.grey[600]),
                     ),
@@ -76,19 +101,30 @@ class UpcomingBookingTab extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Text(
+                          Text(
                             "Contact",
                             style: TextStyle(
                                 color: primaryColor,
                                 fontWeight: FontWeight.w500),
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(left: 20, right: 4),
-                            child: const Text(
-                              "Cancel",
-                              style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.w500),
+                            child: GestureDetector(
+                              onTap: () {
+                                rejectDialog(context, upcomingBookings[index],
+                                        "current")
+                                    .then((value) {
+                                  if (value != null) {
+                                    widget.func!();
+                                  }
+                                });
+                              },
+                              child: Text(
+                                "Reject",
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w500),
+                              ),
                             ),
                           ),
                         ],

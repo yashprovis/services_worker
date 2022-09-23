@@ -1,7 +1,12 @@
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants.dart';
+import '../../helpers/methods.dart';
+import '../../providers/worker_provider.dart';
+import '../../services/worker_service.dart';
 import '../../widgets/sw_button.dart';
 import '../../widgets/sw_text.dart';
 import '../../widgets/utils/dropdown_container.dart';
@@ -17,28 +22,31 @@ class EditWorkSettings extends StatefulWidget {
 class _EditWorkSettingsState extends State<EditWorkSettings> {
   String? selectedSpecialization;
   String? selectedExperience;
-  String? selectedWorkLocation;
+
   String? selectedCity;
   TextEditingController tagsController = TextEditingController();
   TextEditingController descController = TextEditingController();
-  List<String> selectedTags = [];
+  TextEditingController rateController = TextEditingController();
+  List selectedTags = [];
 
   final List<String> specializationList = [
     'Car Washing',
     'Cleaning',
     'Hair Styling',
     'Cooking',
-    'Massage'
+    'Massage',
+    'Driving'
   ];
   final List<String> tagList = [
     'Hair Stylist',
     'Hair Spa',
-    'Hair Massage',
-    'Hair Colour'
+    'Car',
+    'Train',
+    "Truck"
   ];
   final List<String> experienceList = [
     "0-1 Years",
-    "1-3 Years",
+    "2-3 Years",
     "3-5 Years",
     "5+ Years"
   ];
@@ -52,7 +60,22 @@ class _EditWorkSettingsState extends State<EditWorkSettings> {
   ];
 
   @override
+  void initState() {
+    WorkerProvider workerProvider =
+        Provider.of<WorkerProvider>(context, listen: false);
+    selectedSpecialization = workerProvider.getWorker.workingSpecialisation;
+    selectedCity = workerProvider.getWorker.workingCity;
+    selectedTags = workerProvider.getWorker.workingTags;
+    descController.text = workerProvider.getWorker.desc;
+    rateController.text = workerProvider.getWorker.hourlyRate.toString();
+    selectedExperience = experienceList.firstWhere((element) => element
+        .startsWith(workerProvider.getWorker.workingExperience.toString()));
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    WorkerProvider workerProvider = Provider.of<WorkerProvider>(context);
     return Scaffold(
         backgroundColor: Colors.white,
         body: Padding(
@@ -78,7 +101,47 @@ class _EditWorkSettingsState extends State<EditWorkSettings> {
                 ],
               ),
               const Padding(
-                padding: EdgeInsets.only(left: 8, top: 30),
+                padding: EdgeInsets.only(right: 16, left: 6, top: 36),
+                //padding: const EdgeInsets.all(8.0),
+                child: SwText("Hourly Rate",
+                    color: primaryColor, weight: FontWeight.w500),
+              ),
+              Container(
+                  margin: const EdgeInsets.only(left: 6, top: 10, bottom: 10),
+                  decoration: BoxDecoration(
+                      //color: Colors.red,
+                      border: Border.all(color: primaryColor, width: 1),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: TextFormField(
+                    controller: rateController,
+                    cursorColor: primaryColor,
+                    cursorWidth: 1.5,
+                    cursorHeight: 16,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1,
+                      letterSpacing: 1.3,
+                    ),
+                    decoration: InputDecoration(
+                        isDense: true,
+                        suffixText: "₹",
+                        hintText: "Hourly Rate",
+                        hintStyle: const TextStyle(
+                            fontSize: 14, height: 1, color: primaryColor
+                            //  fontWeight: FontWeight.w300,
+                            ),
+                        errorBorder: errorBorder,
+                        focusedBorder: border,
+                        enabledBorder: border,
+                        focusedErrorBorder: errorBorder,
+                        border: border),
+                  )),
+              const Padding(
+                padding: EdgeInsets.only(left: 8, top: 10),
                 child: SwText("Select City",
                     color: primaryColor, weight: FontWeight.w500),
               ),
@@ -327,10 +390,32 @@ class _EditWorkSettingsState extends State<EditWorkSettings> {
               Padding(
                 padding: const EdgeInsets.only(left: 6, bottom: 30),
                 child: SwButton(
-                    text: "Complete Profile",
-                    func: () {
-                      // Navigator.of(context)
-                      //     .pushReplacementNamed(HomeScreen.routeName);
+                    text: "Update Settings",
+                    func: () async {
+                      if (selectedExperience == null ||
+                          selectedCity == null ||
+                          selectedSpecialization == null ||
+                          selectedTags.isEmpty ||
+                          descController.text.trim().isEmpty ||
+                          rateController.text.trim().isEmpty) {
+                        showSnack(
+                            context: context,
+                            color: Colors.red,
+                            message: "All inputs are required");
+                      } else {
+                        Map extras = {
+                          "workingExperience":
+                              selectedExperience!.substring(0, 1),
+                          "workingCity": selectedCity.toString(),
+                          "workingSpecialisation":
+                              selectedSpecialization.toString(),
+                          "desc": descController.text.trim(),
+                          "workingTags": selectedTags,
+                          "hourlyRate": rateController.text.trim(),
+                        };
+                        await workerProvider.updateWorkerSettings(
+                            body: extras, context: context);
+                      }
                     },
                     isLoading: false),
               )

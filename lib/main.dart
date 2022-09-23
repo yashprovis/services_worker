@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:services_worker/providers/booking_provider.dart';
+import 'package:services_worker/providers/worker_provider.dart';
 import 'package:services_worker/screens/splash.dart';
 
 import 'helpers/routes.dart';
@@ -38,6 +39,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) => BookingProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WorkerProvider(),
         ),
       ],
       child: MaterialApp(

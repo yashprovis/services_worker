@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:services_worker/screens/profile/edit_work.dart';
-import 'package:services_worker/screens/profile/help_support.dart';
-import 'package:services_worker/screens/profile/terms_conditions.dart';
-import 'package:services_worker/widgets/sw_scaffold.dart';
+import 'package:provider/provider.dart';
+import 'package:services_worker/providers/worker_provider.dart';
+import 'package:services_worker/screens/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../constants.dart';
 import '../../widgets/sw_text.dart';
 import '../profile/edit_profile.dart';
 
@@ -12,30 +12,9 @@ class ProfileScreen extends StatelessWidget {
   static const routeName = "/profile";
   const ProfileScreen({Key? key}) : super(key: key);
 
-  static const List profileItems = [
-    {
-      "name": "Work Settings",
-      "route": EditWorkSettings.routeName,
-      "icon": CupertinoIcons.settings
-    },
-    {
-      "name": "Help and Support",
-      "route": HelpSupport.routeName,
-      "icon": CupertinoIcons.info
-    },
-    {
-      "name": "Terms and Conditions",
-      "route": TermsConditions.routeName,
-      "icon": CupertinoIcons.doc
-    },
-    {
-      "name": "Logout",
-      //  "route": AddressScreen.routeName,
-      "icon": CupertinoIcons.person_badge_minus
-    }
-  ];
   @override
   Widget build(BuildContext context) {
+    WorkerProvider workerProvider = Provider.of<WorkerProvider>(context);
     return Scaffold(
         backgroundColor: Colors.white,
         body: Padding(
@@ -84,8 +63,12 @@ class ProfileScreen extends StatelessWidget {
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(50),
                           ),
-                          child: SwText("Worker".substring(0, 2).toUpperCase(),
-                              color: Colors.white, size: 20),
+                          child: SwText(
+                              workerProvider.getWorker.name
+                                  .substring(0, 2)
+                                  .toUpperCase(),
+                              color: Colors.white,
+                              size: 20),
                         ),
                         SizedBox(
                           width: MediaQuery.of(context).size.width - 110,
@@ -96,7 +79,8 @@ class ProfileScreen extends StatelessWidget {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  SwText("Worker Name", size: 18),
+                                  SwText(workerProvider.getWorker.name,
+                                      size: 18),
                                   const Padding(
                                     padding: EdgeInsets.only(right: 5),
                                     child:
@@ -107,9 +91,10 @@ class ProfileScreen extends StatelessWidget {
                               Padding(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 7),
-                                child: SwText("worker@email.com", size: 13),
+                                child: SwText(workerProvider.getWorker.email,
+                                    size: 13),
                               ),
-                              SwText("+9199999999", size: 13)
+                              SwText(workerProvider.getWorker.phone, size: 13)
                             ],
                           ),
                         ),
@@ -123,12 +108,17 @@ class ProfileScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemBuilder: (context, index) {
                   return ListTile(
-                    onTap: () {
+                    onTap: () async {
                       if (index == 3) {
-                        return;
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        prefs.setString(tokenPref, "").then((value) =>
+                            Navigator.of(context)
+                                .pushReplacementNamed(LoginScreen.routeName));
+                      } else {
+                        Navigator.of(context)
+                            .pushNamed(profileItems[index]["route"]);
                       }
-                      Navigator.of(context)
-                          .pushNamed(profileItems[index]["route"]);
                     },
                     minLeadingWidth: 30,
                     leading: Icon(profileItems[index]["icon"], size: 30),

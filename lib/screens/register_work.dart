@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:services_worker/constants.dart';
-import 'package:services_worker/screens/home.dart';
+import 'package:services_worker/helpers/methods.dart';
+import 'package:services_worker/services/worker_service.dart';
 import 'package:services_worker/widgets/sw_button.dart';
 
 import '../widgets/sw_scaffold.dart';
@@ -10,14 +15,15 @@ import '../widgets/utils/dropdown_container.dart';
 
 class RegisterWorkScreen extends StatefulWidget {
   static const routeName = "/registerWorkScreen";
-  const RegisterWorkScreen({Key? key}) : super(key: key);
+  final Map<String, String> args;
+  const RegisterWorkScreen({Key? key, required this.args}) : super(key: key);
 
   @override
   State<RegisterWorkScreen> createState() => _RegisterWorkScreenState();
 }
 
 class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
-  List<String> selectedTags = [];
+  List selectedTags = [];
   final List<String> specializationList = [
     'Car Washing',
     'Cleaning',
@@ -33,7 +39,7 @@ class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
   ];
   final List<String> experienceList = [
     "0-1 Years",
-    "1-3 Years",
+    "1-2 Years",
     "3-5 Years",
     "5+ Years"
   ];
@@ -45,12 +51,14 @@ class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
     "Pune",
     "Delhi"
   ];
+  XFile? image;
   String? selectedSpecialization;
   String? selectedExperience;
   String? selectedWorkLocation;
   String? selectedCity;
   TextEditingController tagsController = TextEditingController();
   TextEditingController descController = TextEditingController();
+  TextEditingController rateController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return SwScaffold(
@@ -97,31 +105,72 @@ class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
               ],
             ),
             Center(
-              child: Container(
-                  transform: Matrix4.translationValues(0, -15, 0),
-                  height: 100,
-                  width: 100,
-                  margin: const EdgeInsets.only(bottom: 10, top: 0),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: primaryLight,
-                    borderRadius: BorderRadius.circular(60),
-                    // image: userProvider.getUser.image == ""
-                    //     ? null
-                    //     : DecorationImage(
-                    //         image: NetworkImage(
-                    //             userProvider.getUser.image))
-                  ),
-                  // child: userProvider.getUser.image == ""
-                  //     ? EcomText(
-                  //         userProvider.getUser.name
-                  //             .substring(0, 2)
-                  //             .toUpperCase(),
-                  //         color: Colors.white,
-                  //         size: 26)
-                  //     : null,
-                  child: const SwText("YA", color: Colors.white, size: 22)),
+              child: GestureDetector(
+                onTap: () async {
+                  image = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  setState(() {});
+                },
+                child: Container(
+                    transform: Matrix4.translationValues(0, -15, 0),
+                    height: 100,
+                    width: 100,
+                    margin: const EdgeInsets.only(bottom: 10, top: 0),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: primaryLight,
+                        borderRadius: BorderRadius.circular(60),
+                        image: image == null
+                            ? null
+                            : DecorationImage(
+                                fit: BoxFit.cover,
+                                image: FileImage(File(image!.path)))),
+                    child: image != null
+                        ? null
+                        : const SwText("YA", color: Colors.white, size: 22)),
+              ),
             ),
+            const Padding(
+              padding: EdgeInsets.only(right: 16, left: 8, top: 20),
+              //padding: const EdgeInsets.all(8.0),
+              child: SwText("Hourly Rate",
+                  color: primaryColor, weight: FontWeight.w500),
+            ),
+            Container(
+                margin: const EdgeInsets.only(
+                    left: 6, right: 16, top: 10, bottom: 10),
+                decoration: BoxDecoration(
+                    //color: Colors.red,
+                    border: Border.all(color: primaryColor, width: 1),
+                    borderRadius: BorderRadius.circular(10)),
+                child: TextFormField(
+                  controller: rateController,
+                  cursorColor: primaryColor,
+                  cursorWidth: 1.5,
+                  cursorHeight: 16,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1,
+                    letterSpacing: 1.3,
+                  ),
+                  decoration: InputDecoration(
+                      isDense: true,
+                      suffixText: "₹",
+                      hintText: "Hourly Rate",
+                      hintStyle: const TextStyle(
+                          fontSize: 14, height: 1, color: primaryColor
+                          //  fontWeight: FontWeight.w300,
+                          ),
+                      errorBorder: errorBorder,
+                      focusedBorder: border,
+                      enabledBorder: border,
+                      focusedErrorBorder: errorBorder,
+                      border: border),
+                )),
             const Padding(
               padding: EdgeInsets.only(right: 16, left: 8, top: 10),
               //padding: const EdgeInsets.all(8.0),
@@ -323,7 +372,7 @@ class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
                       tagsController.clear();
                     }
                   },
-                  value: selectedTags.isEmpty ? null : selectedTags.last,
+                  //   value: selectedTags.isEmpty ? null : selectedTags.last,
                   onChanged: (value) {},
                   buttonHeight: 40,
                   buttonWidth: 240,
@@ -400,9 +449,36 @@ class _RegisterWorkScreenState extends State<RegisterWorkScreen> {
               padding: const EdgeInsets.only(left: 6, right: 16, bottom: 30),
               child: SwButton(
                   text: "Complete Profile",
-                  func: () {
-                    Navigator.of(context)
-                        .pushReplacementNamed(HomeScreen.routeName);
+                  func: () async {
+                    if (image == null ||
+                        selectedExperience == null ||
+                        selectedCity == null ||
+                        selectedSpecialization == null ||
+                        selectedTags.isEmpty ||
+                        descController.text.trim().isEmpty ||
+                        rateController.text.trim().isEmpty) {
+                      showSnack(
+                          context: context, message: "All inputs are required");
+                    } else {
+                      Map<String, String> extras = {
+                        "workingExperience":
+                            selectedExperience!.substring(0, 1),
+                        "workingCity": selectedCity.toString(),
+                        "workingSpecialisation":
+                            selectedSpecialization.toString(),
+                        "desc": descController.text.trim(),
+                        "hourlyRate": rateController.text.trim(),
+                      };
+                      extras.addAll(widget.args);
+                      print(extras);
+                      await WorkerService().registerWorker(
+                          body: extras,
+                          tags: selectedTags,
+                          image: image!,
+                          context: context);
+                    }
+                    // Navigator.of(context)
+                    //     .pushReplacementNamed(HomeScreen.routeName);
                   },
                   isLoading: false),
             )

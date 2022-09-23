@@ -1,14 +1,16 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:services_worker/services/booking_service.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../constants.dart';
+import '../models/booking_model.dart';
+import '../providers/booking_provider.dart';
+import '../providers/worker_provider.dart';
 import '../widgets/sw_scaffold.dart';
 import '../widgets/sw_text.dart';
-import 'tabs/booking.dart';
-import 'tabs/booking_history.dart';
-import 'tabs/invoice.dart';
-import 'tabs/profile.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routeName = "/home";
@@ -19,47 +21,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const List homeItems = [
-    {
-      "name": "Booking",
-      "route": BookingScreen.routeName,
-      "icon": CupertinoIcons.cube_box
-    },
-    {
-      "name": "Booking History",
-      "route": BookingHistoryScreen.routeName,
-      "icon": CupertinoIcons.arrow_counterclockwise_circle
-    },
-    {
-      "name": "My Profile",
-      "route": ProfileScreen.routeName,
-      "icon": CupertinoIcons.person
-    },
-    {
-      "name": "Invoices",
-      "route": InvoiceScreen.routeName,
-      "icon": CupertinoIcons.doc_chart
+  init() async {
+    WorkerProvider workerProvider =
+        Provider.of<WorkerProvider>(context, listen: false);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String token = prefs.getString(tokenPref) ?? "";
+    if (token.isNotEmpty) {
+      setState(() {
+        headerApiMap["x-access-token"] = token;
+      });
+      await workerProvider.refreshWorker();
     }
-  ];
+  }
 
-  // @override
-  // void initState() {
-  //   init();
-  //   super.initState();
-  // }
-
-  // init() async {
-  //   UserProvider userProvider =
-  //       Provider.of<UserProvider>(context, listen: false);
-  //   OrderProvider orderProvider =
-  //       Provider.of<OrderProvider>(context, listen: false);
-  //   await userProvider.refreshUser();
-  //   await orderProvider.fetchCurrentOrders();
-  // }
+  @override
+  void initState() {
+    init();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    //  TabsProvider tabs = Provider.of<TabsProvider>(context);
+    BookingProvider bookingProvider = Provider.of<BookingProvider>(context);
     return SwScaffold(
         body: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -78,32 +61,49 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () {
-                  Navigator.of(context).pushNamed(homeItems[index]["route"]);
+                  Navigator.of(context)
+                      .pushNamed(
+                    homeItems[index]["route"],
+                  )
+                      .whenComplete(() {
+                    if (index == 0) {
+                      bookingProvider.setBooking(null);
+                      bookingProvider.resetBooking();
+                    }
+                  });
                 },
                 child: Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: Colors.white,
+                      color: index == 0 ? primaryColor : Colors.white,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Icon(homeItems[index]["icon"], size: 28),
+                          child: Icon(
+                            homeItems[index]["icon"],
+                            size: 28,
+                            color: index != 0 ? null : Colors.white,
+                          ),
                         ),
-                        SwText(homeItems[index]["name"],
-                            size: 20, align: TextAlign.center),
-                        if (index == 0)
-                          Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: SwText(
-                                "Next: ${DateFormat("MMM dd,yy hh:mm a").format(DateTime.now())}",
-                                size: 12,
-                                align: TextAlign.center,
-                                color: Colors.grey[600]),
-                          )
+                        SwText(
+                          homeItems[index]["name"],
+                          size: 20,
+                          align: TextAlign.center,
+                          color: index != 0 ? null : Colors.white,
+                        ),
+                        // if (index == 0)
+                        //   Padding(
+                        //     padding: const EdgeInsets.all(6),
+                        //     child: SwText(
+                        //         "Next: ${nextBooking == null ? "-" : DateFormat("MMM dd,yy hh:mm a").format(nextBooking!.bookingDate)}",
+                        //         size: 12,
+                        //         align: TextAlign.center,
+                        //         color: Colors.grey[600]),
+                        //   )
                       ],
                     )),
               );
