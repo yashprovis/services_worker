@@ -36,8 +36,8 @@ InputBorder errorBorder = OutlineInputBorder(
 );
 const String tokenPref = "AUTH_TOKEN";
 
-const String baseUrl = "https://460a-45-249-86-85.ngrok.io/api";
-const String uploadUrl = "https://460a-45-249-86-85.ngrok.io/uploads";
+const String baseUrl = "http://192.168.1.7:5000/api";
+const String uploadUrl = "http://192.168.1.7:5000/uploads";
 Map<String, String> headerApiMap = {
   "Content-Type": "application/json; charset=utf-8",
   "Accept": "*/*"

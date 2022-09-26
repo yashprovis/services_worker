@@ -95,15 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           align: TextAlign.center,
                           color: index != 0 ? null : Colors.white,
                         ),
-                        // if (index == 0)
-                        //   Padding(
-                        //     padding: const EdgeInsets.all(6),
-                        //     child: SwText(
-                        //         "Next: ${nextBooking == null ? "-" : DateFormat("MMM dd,yy hh:mm a").format(nextBooking!.bookingDate)}",
-                        //         size: 12,
-                        //         align: TextAlign.center,
-                        //         color: Colors.grey[600]),
-                        //   )
                       ],
                     )),
               );
